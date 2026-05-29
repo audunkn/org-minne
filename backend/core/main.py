@@ -1,8 +1,9 @@
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -14,10 +15,18 @@ PORT = int(os.getenv("PORT", "8000"))
 TOKEN = os.getenv("TOKEN", "")
 VERSION = os.getenv("VERSION", "0.1.0")
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(f"[org-minne] backend v{VERSION} startet på port {PORT}")
+    yield
+
+
 app = FastAPI(
     title="Det Organisatoriske Minnet — Backend",
     version=VERSION,
     description="Lokal agent for anomalianalyse og RAG mot bedriftsdokumenter.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -43,11 +52,6 @@ async def token_middleware(request: Request, call_next):
         return JSONResponse(status_code=401, content={"detail": "Ugyldig eller manglende token."})
 
     return await call_next(request)
-
-
-@app.on_event("startup")
-async def startup():
-    print(f"[org-minne] backend v{VERSION} startet på port {PORT}")
 
 
 @app.get("/health", response_model=HealthSvar, tags=["Status"])
