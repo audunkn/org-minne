@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# PyInstaller
+*.spec.bak
+/infra/dist/
+/infra/build/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/build/
+.npm/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Secrets
+*.env
+!backend/core/.env.mal

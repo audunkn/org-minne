@@ -1,0 +1,6 @@
+{
+  "kilde": "excel_tabell",
+  "ai": "openai",
+  "retriever": "lokal_vektor",
+  "backend_url": "http://localhost:8000"
+}
