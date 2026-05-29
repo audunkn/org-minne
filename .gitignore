@@ -26,6 +26,9 @@ frontend/build/
 .DS_Store
 Thumbs.db
 
+# Claude Code
+.claude/
+
 # IDE
 .vscode/settings.json
 .idea/
