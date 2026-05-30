@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Revisor</title>
+  <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 14px;
+      color: #333;
+      padding: 16px;
+      background: #fafafa;
+    }
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    p.ingress { color: #666; margin-bottom: 16px; font-size: 13px; }
+    button {
+      display: block;
+      width: 100%;
+      padding: 10px 16px;
+      background: #0078d4;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    button:hover:not(:disabled) { background: #005ea2; }
+    #status {
+      margin-top: 12px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      display: none;
+    }
+    #status.feil { background: #fde7e9; color: #a80000; }
+    #status.laster { background: #e6f0ff; color: #0078d4; }
+    #resultat {
+      margin-top: 12px;
+      padding: 12px;
+      background: #e6f4ea;
+      border-radius: 4px;
+      font-size: 13px;
+      display: none;
+    }
+    #resultat .etikett { font-weight: 600; margin-bottom: 4px; }
+    #resultat .verdi { font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>AI-Revisor</h1>
+  <p class="ingress">Anomalianalyse og organisatorisk minne for økonomiavdelinger.</p>
+
+  <button id="btnAnalyser" disabled>Test tilkobling</button>
+
+  <div id="status"></div>
+
+  <div id="resultat">
+    <div class="etikett">Backend svarer</div>
+    <div id="resultatInnhold" class="verdi"></div>
+  </div>
+</body>
+</html>
