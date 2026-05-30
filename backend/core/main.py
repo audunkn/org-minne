@@ -44,7 +44,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def token_middleware(request: Request, call_next):
-    if request.url.path in ("/docs", "/openapi.json", "/redoc"):
+    if request.method == "OPTIONS" or request.url.path in ("/docs", "/openapi.json", "/redoc"):
         return await call_next(request)
 
     auth = request.headers.get("Authorization", "")
