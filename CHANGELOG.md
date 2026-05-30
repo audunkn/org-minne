@@ -25,4 +25,8 @@
 
 ### Ad hoc-endringer
 
-*(ingen)*
+#### fix
+- CORS preflight (OPTIONS) slipper nå gjennom token-middleware *(2026-05-31)*
+- Dev-server bruker lokale PEM-sertifikater via office-addin-dev-certs i stedet for webpack --https-flagg *(2026-05-31)*
+- Lagt til office-addin-dev-certs som devDependency *(2026-05-31)*
+- PEM-filer ekskludert fra git via .gitignore *(2026-05-31)*

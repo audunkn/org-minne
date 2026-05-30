@@ -32,7 +32,13 @@ module.exports = {
   ],
   devServer: {
     port: 3000,
-    https: true,
+    server: {
+    type: 'https',
+    options: {
+      key: require('fs').readFileSync('./localhost-key.pem'),
+      cert: require('fs').readFileSync('./localhost.pem'),
+  },
+},
     headers: {
       "Access-Control-Allow-Origin": "*",
     },
