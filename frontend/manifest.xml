@@ -59,6 +59,22 @@
                     <SourceLocation resid="Taskpane.Url"/>
                   </Action>
                 </Control>
+                <Control xsi:type="Button" id="AnomaliButton">
+                  <Label resid="AnomaliButton.Label"/>
+                  <Supertip>
+                    <Title resid="AnomaliButton.Label"/>
+                    <Description resid="AnomaliButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
               </Group>
             </OfficeTab>
           </ExtensionPoint>
@@ -81,10 +97,12 @@
         <bt:String id="GetStarted.Title" DefaultValue="Kom i gang med AI-Revisor"/>
         <bt:String id="CommandsGroup.Label" DefaultValue="AI-Revisor"/>
         <bt:String id="TaskpaneButton.Label" DefaultValue="Analyser"/>
+        <bt:String id="AnomaliButton.Label" DefaultValue="Anomali deteksjon"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Åpner AI-Revisor-panelet for anomalianalyse."/>
         <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Åpne AI-Revisor for å analysere regnskapsdata."/>
+        <bt:String id="AnomaliButton.Tooltip" DefaultValue="Kjør 4-algoritme anomalideteksjon på valgt datasett og skriv resultater tilbake til arket."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

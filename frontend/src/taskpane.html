@@ -26,6 +26,7 @@
       border-radius: 4px;
       font-size: 14px;
       cursor: pointer;
+      margin-bottom: 8px;
     }
     button:disabled { background: #aaa; cursor: not-allowed; }
     button:hover:not(:disabled) { background: #005ea2; }
@@ -47,7 +48,7 @@
       display: none;
     }
     #resultat .etikett { font-weight: 600; margin-bottom: 4px; }
-    #resultat .verdi { font-family: monospace; }
+    #resultat .verdi { font-family: monospace; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -55,11 +56,12 @@
   <p class="ingress">Anomalianalyse og organisatorisk minne for økonomiavdelinger.</p>
 
   <button id="btnAnalyser" disabled>Test tilkobling</button>
+  <button id="btnAnomali" disabled>Anomali deteksjon</button>
 
   <div id="status"></div>
 
   <div id="resultat">
-    <div class="etikett">Backend svarer</div>
+    <div class="etikett">Resultat</div>
     <div id="resultatInnhold" class="verdi"></div>
   </div>
 </body>
