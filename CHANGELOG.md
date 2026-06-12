@@ -4,6 +4,24 @@
 
 ### Planlagte implementeringer
 
+#### Fase 2 — Anomalideteksjon *(2026-06-12)*
+
+##### feat
+- 4-algoritme ensemble (Z-score, IQR, IsolationForest, LOF) i `backend/core/analyse/anomali.py`
+- Generisk skjemadeteksjon: første kolonne er identifikator, numeriske øvrige er features
+- `/v1/analyse` returnerer nå reelle anomaliresultater (ikke lenger mock)
+- Input-rekkefølge bevares — posisjonell skriving til Excel uten id-matching
+- Ny "Anomali deteksjon"-knapp i Task Pane og manifest
+- Excel-integrasjon: leser brukt område, skriver "Anomali"/"Flagg"-kolonner til høyre for data
+
+##### test
+- 7 enhetstester for anomalimodul (`test_anomali.py`)
+- 2 nye API-integrasjonstester for `/v1/analyse` med reelle data og for-få-rader-håndtering
+
+##### chore
+- numpy==1.26.4, scipy==1.13.1, pandas==2.2.2, scikit-learn==1.5.1 lagt til i requirements.txt
+- numpy og scipy fjernet fra PyInstaller excludes i agent.spec
+
 #### Fase 1 — Bevis at delene snakker sammen
 
 ##### feat
