@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from analyse.anomali import AnomaliFeil, kjør_anomalideteksjon
 from modeller import AnalyseForespørsel, AnalyseSvar, HealthSvar, LoggSteg
 
 load_dotenv()
@@ -66,9 +67,15 @@ async def health():
 @app.post("/v1/analyse", response_model=AnalyseSvar, tags=["Analyse"])
 async def analyse(forespørsel: AnalyseForespørsel):
     nå = datetime.now(timezone.utc).isoformat()
-    logg = [
-        LoggSteg(steg=1, tid=nå, melding=f"Forespørsel mottatt. Kilde: {forespørsel.kilde}."),
-        LoggSteg(steg=2, tid=nå, melding="Datahenting ikke implementert i Fase 1 (mock-modus)."),
-        LoggSteg(steg=3, tid=nå, melding="Analyse fullført. Ingen avvik funnet (mock-respons)."),
-    ]
-    return AnalyseSvar(avvik=[], logg=logg)
+    logg = [LoggSteg(steg=1, tid=nå, melding=f"Forespørsel mottatt. Kilde: {forespørsel.kilde}.")]
+
+    try:
+        avvik = kjør_anomalideteksjon(forespørsel.inline_data)
+        logg.append(LoggSteg(steg=2, tid=nå, melding=f"Anomalideteksjon kjørt på {len(forespørsel.inline_data)} rader."))
+        logg.append(LoggSteg(steg=3, tid=nå, melding=f"Analyse fullført. {sum(1 for a in avvik if a['er_anomali'])} anomali(er) funnet."))
+    except AnomaliFeil as feil:
+        avvik = []
+        logg.append(LoggSteg(steg=2, tid=nå, melding=f"Anomalideteksjon ikke kjørt: {feil.melding}"))
+        logg.append(LoggSteg(steg=3, tid=nå, melding="Analyse fullført. Ingen avvik beregnet."))
+
+    return AnalyseSvar(avvik=avvik, logg=logg)
