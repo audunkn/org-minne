@@ -82,3 +82,35 @@ def test_analyse_med_feil_token():
     payload = {"kilde": "excel_tabell"}
     svar = client.post("/v1/analyse", json=payload, headers=auth(FEIL_TOKEN))
     assert svar.status_code == 401
+
+
+def test_analyse_med_for_få_rader():
+    payload = {
+        "kilde": "excel_tabell",
+        "inline_data": [
+            {"Avdeling": "A", "Kostnad": 100.0},
+            {"Avdeling": "B", "Kostnad": 200.0},
+            {"Avdeling": "C", "Kostnad": 300.0},
+        ],
+    }
+    svar = client.post("/v1/analyse", json=payload, headers=auth(GYLDIG_TOKEN))
+    assert svar.status_code == 200
+    data = svar.json()
+    assert data["avvik"] == []
+    assert any("ikke kjørt" in steg["melding"].lower() or "minimum" in steg["melding"].lower()
+               for steg in data["logg"])
+
+
+def test_analyse_med_reelle_data_og_outlier():
+    rader = [
+        {"Avdeling": f"Avd{i}", "Kostnad": 100.0 + i, "Volum": 50.0 + i}
+        for i in range(8)
+    ]
+    rader.append({"Avdeling": "Outlier", "Kostnad": 999999.0, "Volum": 999999.0})
+    payload = {"kilde": "excel_tabell", "inline_data": rader}
+    svar = client.post("/v1/analyse", json=payload, headers=auth(GYLDIG_TOKEN))
+    assert svar.status_code == 200
+    data = svar.json()
+    assert len(data["avvik"]) == 9
+    outlier = data["avvik"][-1]
+    assert outlier["er_anomali"] is True
