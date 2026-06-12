@@ -4,6 +4,23 @@
 
 ### Planlagte implementeringer
 
+#### Fase 3, del 1 — RAG-indeksering av transkripsjoner *(2026-06-13 15:00)*
+
+##### feat
+- `backend/core/rag/indekser.py`: idempotent indeksering av norske resultatpresentasjoner i ChromaDB
+- `rag_konfig.yaml`: konfigurerbar chunk-størrelse, overlapp, embedding-modell og db-sti
+- Rekursiv chunking med korrekt tegnstart-tracking og separator-prioritering
+- SentenceTransformer `paraphrase-multilingual-MiniLM-L12-v2` for norsk embedding
+- Metadata per chunk: kilde_fil, chunk_nr, total_chunks, tegnstart
+- ID-format `{filnavn}_{chunk_nr}` sikrer idempotens
+
+##### test
+- 17 enhetstester: konfigurasjonslasting, konfig-sti-traversering, chunking-logikk, idempotens, metadata, ID-format
+
+##### chore
+- chromadb==0.6.3, sentence-transformers==3.3.1, PyYAML==6.0.2 lagt til i requirements.txt
+- `vector_db/` lagt til i .gitignore
+
 #### Fase 2 — Anomalideteksjon *(2026-06-12)*
 
 ##### feat
