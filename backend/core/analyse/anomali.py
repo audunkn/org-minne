@@ -124,7 +124,7 @@ def kjør_anomalideteksjon(rader: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "id": str(df[id_kolonne].iloc[i]),
                 "antall_flagg": antall_flagg,
                 "metoder": utløste,
-                "er_anomali": antall_flagg >= 2,
+                "er_anomali": antall_flagg >= 1,
                 "zscore_max": round(float(zscore_max_per_rad[i]), 3),
                 "isolation_forest_score": round(float(iso_score[i]), 4),
                 "lof_score": round(float(lof_score[i]), 4),

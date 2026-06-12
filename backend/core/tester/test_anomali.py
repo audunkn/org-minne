@@ -84,8 +84,8 @@ def test_ren_data_ingen_anomali():
     assert all(a["zscore_max"] < 2.5 for a in avvik)
     assert all("Z-score" not in a["metoder"] for a in avvik)
     assert all("IQR" not in a["metoder"] for a in avvik)
-    # Maks 1 rad kan feilaktig merkes anomali (IsolationForest og LOF velger samme rad)
-    assert sum(a["er_anomali"] for a in avvik) <= 1
+    # IF og LOF kan flagge ulike rader → maks 2 rader med er_anomali=True i ren data
+    assert sum(a["er_anomali"] for a in avvik) <= 2
 
 
 # ---------------------------------------------------------------------------

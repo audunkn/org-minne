@@ -137,6 +137,12 @@ async function kjørAnomalideteksjon(): Promise<void> {
       return;
     }
 
+    const klassifiser = (a: { antall_flagg: number }): string => {
+      if (a.antall_flagg >= 2) return "Ja";
+      if (a.antall_flagg === 1) return "Mulig";
+      return "Nei";
+    };
+
     // Skriv resultater tilbake til arket
     await Excel.run(async (context) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
@@ -154,17 +160,22 @@ async function kjørAnomalideteksjon(): Promise<void> {
         2
       );
       dataRange.values = avvik.map((a) => [
-        a.er_anomali ? "Ja" : "Nei",
+        klassifiser(a),
         `${a.antall_flagg} av 4`,
       ]);
 
       await context.sync();
     });
 
-    const antallAnomalier = avvik.filter((a) => a.er_anomali).length;
-    visResultat(
-      `Analyse fullført.\n${antallAnomalier} anomali(er) funnet av ${avvik.length} rader.\nResultater skrevet til arket.`
-    );
+    const antallJa = avvik.filter((a) => a.antall_flagg >= 2).length;
+    const antallMulig = avvik.filter((a) => a.antall_flagg === 1).length;
+    const oppsummering = [
+      `Analyse fullført. ${avvik.length} rader analysert.`,
+      antallJa > 0 ? `${antallJa} anomali(er) (Ja)` : null,
+      antallMulig > 0 ? `${antallMulig} mulig(e) anomali(er) (Mulig)` : null,
+      "Resultater skrevet til arket.",
+    ].filter(Boolean).join("\n");
+    visResultat(oppsummering);
   } catch (err) {
     visStatus(
       "Kunne ikke nå backend. Sjekk at agent.exe kjører på localhost:8000.",
