@@ -1,0 +1,17 @@
+transkripsjoner:
+  mappe: transcripts
+  mønster: "*.txt"
+  encoding: utf-8
+
+chunking:
+  chunk_størrelse: 800     # tegn per chunk
+  chunk_overlapp: 150      # overlapp mellom påfølgende chunks
+  separator: "\n\n"        # primær splitgrense; faller tilbake på "\n" og " "
+
+embedding:
+  modell: paraphrase-multilingual-MiniLM-L12-v2
+  enhet: cpu               # cpu | cuda
+
+vektor_db:
+  sti: vector_db
+  samling: transkripsjoner

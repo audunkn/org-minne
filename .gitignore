@@ -41,3 +41,6 @@ Thumbs.db
 # SSL-sertifikater (genereres lokalt med office-addin-dev-certs)
 frontend/*.pem
 frontend/*.key
+
+# ChromaDB lokal vektordatabase
+vector_db/
