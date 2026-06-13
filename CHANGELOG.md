@@ -4,6 +4,29 @@
 
 ### Planlagte implementeringer
 
+#### Fase 3, del 2 — LLM-analyse av anomalier med RAG-kontekst *(2026-06-13 17:00)*
+
+##### feat
+- `backend/core/rag/gjenfinning.py`: `søk_chromadb()` henter topp-N relevante chunks fra ChromaDB
+- `backend/core/llm/klient.py`: `lag_llm_klient()` — fabrikk for OpenAI/Mistral basert på `LLM_LEVERANDØR`
+- `backend/core/llm/forklaring.py`: `generer_forklaring()` — RAG-søk + prompt-bygging + LLM-kall
+- `backend/core/main.py`: nytt endepunkt `POST /v1/forklaring` (`ForklaringForespørsel` → `ForklaringSvar`)
+- `backend/core/modeller.py`: `ForklaringForespørsel` og `ForklaringSvar` lagt til
+- `frontend/src/taskpane.html`: "LLM-analyse"-knapp (disabled inntil anomalideteksjon er kjørt)
+- `frontend/src/taskpane.ts`: `kjørLLMAnalyse()` — leser Ja/Mulig-rader, kaller `/v1/forklaring`, skriver til "LLM-analyse"-kolonne med tekstvridd
+- Progress-melding under kjøring: "LLM-analyse N av M rader…"
+- Støtte for Mistral ved å sette `LLM_LEVERANDØR=mistral` i .env
+
+##### test
+- `test_forklaring_returnerer_tekst`: POST med gyldig token → 200, `tekst` er str
+- `test_forklaring_krever_auth`: POST uten token → 401
+- `test_søk_returnerer_dokumenter`: mock ChromaDB returnerer korrekte tekststrenger
+- `test_søk_tom_samling_returnerer_tom_liste`: tom samling → `[]`
+
+##### chore
+- `openai>=1.0.0` og `mistralai>=1.0.0` lagt til i requirements.txt
+- `LLM_LEVERANDØR`, `OPENAI_API_KEY`, `MISTRAL_API_KEY` lagt til i .env.mal
+
 #### Fase 2 — `forklaring`-felt i anomaliresultat *(2026-06-13 HH:MM)*
 
 ##### feat

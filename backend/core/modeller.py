@@ -31,3 +31,12 @@ class HealthSvar(BaseModel):
     status: str
     version: str
     timestamp: str
+
+
+class ForklaringForespørsel(BaseModel):
+    bedrift: str
+    anomali_forklaring: str
+
+
+class ForklaringSvar(BaseModel):
+    tekst: str
