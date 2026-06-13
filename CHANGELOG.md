@@ -4,6 +4,14 @@
 
 ### Planlagte implementeringer
 
+#### RAG-kvalitet — re-indeksering med bedriftsnavn og dotenv-fix *(2026-06-13 19:02)*
+
+##### fix
+- `backend/core/rag/indekser.py`: la til `load_dotenv()` slik at `.env`-filen leses ved kjøring av scriptet direkte
+
+##### chore
+- Slettet gammel `vector_db/` og re-indekserte 25 transkripsjoner — alle omdøpt med bedriftsprefiks, 1625 chunks indeksert
+
 #### RAG-kvalitet — bedriftsidentifikasjon og score-terskel *(2026-06-13 HH:MM)*
 
 ##### feat

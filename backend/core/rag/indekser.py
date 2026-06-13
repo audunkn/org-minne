@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv()
 
 if TYPE_CHECKING:
     import chromadb
