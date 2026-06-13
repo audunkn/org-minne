@@ -129,7 +129,7 @@ async function kjørAnomalideteksjon(): Promise<void> {
     }
 
     const data = await svar.json();
-    const avvik: Array<{ er_anomali: boolean; antall_flagg: number }> = data.avvik;
+    const avvik: Array<{ er_anomali: boolean; antall_flagg: number; forklaring: string | null }> = data.avvik;
 
     if (avvik.length === 0) {
       const siste = data.logg[data.logg.length - 1]?.melding ?? "Ingen avvik beregnet.";
@@ -148,8 +148,8 @@ async function kjørAnomalideteksjon(): Promise<void> {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
 
       // Headerrad
-      const headerRange = sheet.getRangeByIndexes(startRow, startCol + colCount, 1, 2);
-      headerRange.values = [["Anomali", "Flagg"]];
+      const headerRange = sheet.getRangeByIndexes(startRow, startCol + colCount, 1, 3);
+      headerRange.values = [["Anomali", "Flagg", "Forklaring"]];
       headerRange.format.font.bold = true;
 
       // Datarad
@@ -157,11 +157,12 @@ async function kjørAnomalideteksjon(): Promise<void> {
         startRow + 1,
         startCol + colCount,
         avvik.length,
-        2
+        3
       );
       dataRange.values = avvik.map((a) => [
         klassifiser(a),
         `${a.antall_flagg} av 4`,
+        a.forklaring ?? "",
       ]);
 
       await context.sync();

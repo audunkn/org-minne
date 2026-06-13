@@ -7,6 +7,7 @@
 #### Fase 2 — `forklaring`-felt i anomaliresultat *(2026-06-13 HH:MM)*
 
 ##### feat
+- `frontend/src/taskpane.ts`: ny "Forklaring"-kolonne i Excel-utskriften ved siden av "Anomali" og "Flagg"
 - `backend/core/analyse/anomali.py`: nytt felt `forklaring` (str | None) i hvert avvik-entry
 - Prioritering Z-score → IQR → multivariat: univariathendelser peker på konkret tallverdi
 - Format `"univariat: {verdi}"` ved Z-score- eller IQR-flagg, `"multivariat"` ved kun IF/LOF, `None` uten flagg
