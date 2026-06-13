@@ -3,6 +3,7 @@ Genererer LLM-forklaring på anomalier med RAG-kontekst.
 """
 from __future__ import annotations
 
+from fastapi import HTTPException
 from rag.gjenfinning import søk_chromadb
 from llm.klient import lag_llm_klient
 
@@ -56,22 +57,34 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
     import os
     leverandør = os.getenv("LLM_LEVERANDØR", "openai").lower()
 
-    if leverandør == "openai":
-        modell = os.getenv("LLM_MODELL", "gpt-4o-mini")
-        svar = klient.chat.completions.create(
-            model=modell,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-        )
-        return svar.choices[0].message.content.strip()
+    try:
+        if leverandør == "openai":
+            import openai as _openai
+            modell = os.getenv("LLM_MODELL", "gpt-4o-mini")
+            svar = klient.chat.completions.create(
+                model=modell,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+            )
+            return svar.choices[0].message.content.strip()
 
-    if leverandør == "mistral":
-        modell = os.getenv("LLM_MODELL", "mistral-small-latest")
-        svar = klient.chat.complete(
-            model=modell,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-        )
-        return svar.choices[0].message.content.strip()
+        if leverandør == "mistral":
+            modell = os.getenv("LLM_MODELL", "mistral-small-latest")
+            svar = klient.chat.complete(
+                model=modell,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+            )
+            return svar.choices[0].message.content.strip()
 
-    raise ValueError(f"Ukjent LLM_LEVERANDØR ved generering: '{leverandør}'")
+        raise ValueError(f"Ukjent LLM_LEVERANDØR ved generering: '{leverandør}'")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        feilmelding = str(e)
+        if "insufficient_quota" in feilmelding or "RateLimitError" in type(e).__name__:
+            raise HTTPException(status_code=502, detail="OpenAI: kvote overskredet. Legg til credits på platform.openai.com.")
+        if "AuthenticationError" in type(e).__name__ or "authentication" in feilmelding.lower():
+            raise HTTPException(status_code=502, detail="OpenAI: ugyldig API-nøkkel.")
+        raise HTTPException(status_code=502, detail=f"LLM-feil: {feilmelding}")

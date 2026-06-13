@@ -299,7 +299,12 @@ async function kjørLLMAnalyse(): Promise<void> {
       });
 
       if (!svar.ok) {
-        llmResultater[i] = `Feil (HTTP ${svar.status})`;
+        try {
+          const feil = await svar.json();
+          llmResultater[i] = feil.detail ?? `Feil (HTTP ${svar.status})`;
+        } catch {
+          llmResultater[i] = `Feil (HTTP ${svar.status})`;
+        }
       } else {
         const data = await svar.json();
         llmResultater[i] = data.tekst ?? "";
