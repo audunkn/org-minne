@@ -118,6 +118,22 @@ def kjør_anomalideteksjon(rader: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if lof_flagg[i]:
             utløste.append("LOF")
 
+        # Forklaring
+        if zscore_flagg[i]:
+            best_col_idx = int(np.argmax(z_abs[i]))
+            verdi = round(float(X[i, best_col_idx]), 3)
+            forklaring: str | None = f"univariat: {verdi}"
+        elif iqr_flagg[i]:
+            outside = (X[i] < nedre) | (X[i] > øvre)
+            z_abs_outside = np.where(outside, z_abs[i], -np.inf)
+            best_col_idx = int(np.argmax(z_abs_outside))
+            verdi = round(float(X[i, best_col_idx]), 3)
+            forklaring = f"univariat: {verdi}"
+        elif iso_flagg[i] or lof_flagg[i]:
+            forklaring = "multivariat"
+        else:
+            forklaring = None
+
         antall_flagg = len(utløste)
         avvik.append(
             {
@@ -128,6 +144,7 @@ def kjør_anomalideteksjon(rader: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "zscore_max": round(float(zscore_max_per_rad[i]), 3),
                 "isolation_forest_score": round(float(iso_score[i]), 4),
                 "lof_score": round(float(lof_score[i]), 4),
+                "forklaring": forklaring,
             }
         )
 

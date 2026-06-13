@@ -118,6 +118,43 @@ def test_avvik_struktur():
         assert isinstance(a["zscore_max"], float)
         assert isinstance(a["isolation_forest_score"], float)
         assert isinstance(a["lof_score"], float)
+        assert "forklaring" in a
+        assert a["forklaring"] is None or isinstance(a["forklaring"], str)
+
+
+# ---------------------------------------------------------------------------
+# test_rekkefølge_bevares
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# test_forklaring_outlier_er_univariat
+# ---------------------------------------------------------------------------
+
+def test_forklaring_outlier_er_univariat():
+    """Ekstremverdien (Kostnad=999999) skal gi forklaring som starter med 'univariat: '."""
+    rader = _bygg_rader(9)
+    rader.append({"Avdeling": "Outlier", "Kostnad": 999999.0, "Volum": 999999.0})
+    avvik = kjør_anomalideteksjon(rader)
+    outlier = avvik[-1]
+    assert outlier["er_anomali"] is True
+    assert isinstance(outlier["forklaring"], str)
+    assert outlier["forklaring"].startswith("univariat: ")
+
+
+# ---------------------------------------------------------------------------
+# test_forklaring_ren_data_er_none_eller_multivariat
+# ---------------------------------------------------------------------------
+
+def test_forklaring_ren_data_er_none_eller_multivariat():
+    """Rene rader uten Z-score- eller IQR-flagg skal ha forklaring=None eller 'multivariat'."""
+    rader = _bygg_rader(10)
+    avvik = kjør_anomalideteksjon(rader)
+    for a in avvik:
+        if not a["er_anomali"]:
+            assert a["forklaring"] is None
+        else:
+            # Ren data: kun IF/LOF kan flagge → multivariat
+            assert a["forklaring"] == "multivariat" or a["forklaring"] is None
 
 
 # ---------------------------------------------------------------------------
