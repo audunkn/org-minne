@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from analyse.anomali import AnomaliFeil, kjør_anomalideteksjon
-from modeller import AnalyseForespørsel, AnalyseSvar, HealthSvar, LoggSteg
+from llm.forklaring import generer_forklaring
+from modeller import AnalyseForespørsel, AnalyseSvar, ForklaringForespørsel, ForklaringSvar, HealthSvar, LoggSteg
 
 load_dotenv()
 
@@ -79,3 +80,9 @@ async def analyse(forespørsel: AnalyseForespørsel):
         logg.append(LoggSteg(steg=3, tid=nå, melding="Analyse fullført. Ingen avvik beregnet."))
 
     return AnalyseSvar(avvik=avvik, logg=logg)
+
+
+@app.post("/v1/forklaring", response_model=ForklaringSvar, tags=["Forklaring"])
+async def forklaring(req: ForklaringForespørsel):
+    tekst = generer_forklaring(req.bedrift, req.anomali_forklaring)
+    return ForklaringSvar(tekst=tekst)

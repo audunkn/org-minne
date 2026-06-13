@@ -5,6 +5,12 @@ const BACKEND_URL = "http://localhost:8000";
 // I utvikling: localStorage.setItem("org_minne_token", "<token>") i konsollen.
 const TOKEN_KEY = "org_minne_token";
 
+// Lagres etter vellykket anomalideteksjon for bruk av LLM-analyse
+let sisteAvvik: Array<{ er_anomali: boolean; antall_flagg: number; forklaring: string | null }> | null = null;
+let sisteStartRow = 0;
+let sisteStartCol = 0;
+let sisteColCount = 0;
+
 function visStatus(melding: string, type: "laster" | "feil"): void {
   const el = document.getElementById("status") as HTMLDivElement;
   el.textContent = melding;
@@ -91,6 +97,9 @@ async function kjørAnomalideteksjon(): Promise<void> {
       startCol = range.columnIndex;
       rowCount = range.rowCount;
       colCount = range.columnCount;
+      sisteStartRow = startRow;
+      sisteStartCol = startCol;
+      sisteColCount = colCount;
 
       const headers = range.values[0] as string[];
       const dataRows = range.values.slice(1) as unknown[][];
@@ -168,6 +177,13 @@ async function kjørAnomalideteksjon(): Promise<void> {
       await context.sync();
     });
 
+    // Lagre for LLM-analyse og aktiver knappen
+    sisteAvvik = avvik;
+    const btnLLM = document.getElementById("btnLLM") as HTMLButtonElement;
+    if (avvik.some((a) => a.antall_flagg >= 1)) {
+      btnLLM.disabled = false;
+    }
+
     const antallJa = avvik.filter((a) => a.antall_flagg >= 2).length;
     const antallMulig = avvik.filter((a) => a.antall_flagg === 1).length;
     const oppsummering = [
@@ -187,6 +203,149 @@ async function kjørAnomalideteksjon(): Promise<void> {
   }
 }
 
+async function kjørLLMAnalyse(): Promise<void> {
+  const knapp = document.getElementById("btnLLM") as HTMLButtonElement;
+  knapp.disabled = true;
+  skjulResultat();
+
+  if (!sisteAvvik) {
+    visStatus("Kjør anomalideteksjon først.", "feil");
+    knapp.disabled = false;
+    return;
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY) ?? "";
+
+  // Identifiser "Ja"/"Mulig"-rader og les bedriftsnavn + forklaring fra arket
+  const klassifiser = (a: { antall_flagg: number }): string => {
+    if (a.antall_flagg >= 2) return "Ja";
+    if (a.antall_flagg === 1) return "Mulig";
+    return "Nei";
+  };
+
+  const kandidatIndekser = sisteAvvik
+    .map((a, i) => ({ i, klasse: klassifiser(a) }))
+    .filter(({ klasse }) => klasse === "Ja" || klasse === "Mulig");
+
+  if (kandidatIndekser.length === 0) {
+    visStatus("Ingen anomalier å analysere.", "feil");
+    knapp.disabled = false;
+    return;
+  }
+
+  // Les bedriftsnavn (kol 0) og forklaring (den tredje nye kolonnen = sisteColCount + 2)
+  let headers: string[] = [];
+  let bedriftKolonne = 0;
+  let forklaringKolOffset = sisteColCount + 2; // 0-indeksert offset for Forklaring-kolonnen
+
+  try {
+    await Excel.run(async (context) => {
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+      const headerRange = sheet.getRangeByIndexes(sisteStartRow, sisteStartCol, 1, sisteColCount);
+      headerRange.load("values");
+      await context.sync();
+      headers = headerRange.values[0] as string[];
+    });
+  } catch {
+    visStatus("Kunne ikke lese kolonnenavn fra arket.", "feil");
+    knapp.disabled = false;
+    return;
+  }
+
+  const llmResultater: string[] = new Array(sisteAvvik.length).fill("");
+
+  let ferdig = 0;
+  const total = kandidatIndekser.length;
+
+  for (const { i } of kandidatIndekser) {
+    ferdig++;
+    visStatus(`LLM-analyse ${ferdig} av ${total} rader…`, "laster");
+
+    // Les bedriftsnavn og forklaring fra arket for denne raden
+    let bedrift = "";
+    let forklaring = "";
+
+    try {
+      await Excel.run(async (context) => {
+        const sheet = context.workbook.worksheets.getActiveWorksheet();
+        // bedrift = første kolonne i dataradene (rad i+1 for å hoppe over header)
+        const bedriftRange = sheet.getRangeByIndexes(
+          sisteStartRow + 1 + i, sisteStartCol + bedriftKolonne, 1, 1
+        );
+        bedriftRange.load("values");
+
+        const forklaringRange = sheet.getRangeByIndexes(
+          sisteStartRow + 1 + i, sisteStartCol + forklaringKolOffset, 1, 1
+        );
+        forklaringRange.load("values");
+
+        await context.sync();
+        bedrift = String(bedriftRange.values[0][0] ?? "");
+        forklaring = String(forklaringRange.values[0][0] ?? "");
+      });
+    } catch {
+      llmResultater[i] = "Kunne ikke lese rad.";
+      continue;
+    }
+
+    try {
+      const svar = await fetch(`${BACKEND_URL}/v1/forklaring`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ bedrift, anomali_forklaring: forklaring }),
+      });
+
+      if (!svar.ok) {
+        try {
+          const feil = await svar.json();
+          llmResultater[i] = feil.detail ?? `Feil (HTTP ${svar.status})`;
+        } catch {
+          llmResultater[i] = `Feil (HTTP ${svar.status})`;
+        }
+      } else {
+        const data = await svar.json();
+        llmResultater[i] = data.tekst ?? "";
+      }
+    } catch {
+      llmResultater[i] = "Nettverksfeil.";
+    }
+  }
+
+  // Skriv LLM-analyse-kolonnen til arket (4. nye kolonne, etter Forklaring)
+  try {
+    await Excel.run(async (context) => {
+      const sheet = context.workbook.worksheets.getActiveWorksheet();
+
+      // Header
+      const headerRange = sheet.getRangeByIndexes(
+        sisteStartRow, sisteStartCol + sisteColCount + 3, 1, 1
+      );
+      headerRange.values = [["LLM-analyse"]];
+      headerRange.format.font.bold = true;
+
+      // Data
+      const dataRange = sheet.getRangeByIndexes(
+        sisteStartRow + 1, sisteStartCol + sisteColCount + 3,
+        sisteAvvik!.length, 1
+      );
+      dataRange.values = llmResultater.map((t) => [t]);
+      dataRange.format.wrapText = true;
+
+      await context.sync();
+    });
+  } catch {
+    visStatus("Kunne ikke skrive resultater til arket.", "feil");
+    knapp.disabled = false;
+    return;
+  }
+
+  visResultat(`LLM-analyse fullført. ${total} rad(er) analysert.`);
+  knapp.disabled = false;
+}
+
 Office.onReady(() => {
   const btnAnalyser = document.getElementById("btnAnalyser") as HTMLButtonElement;
   btnAnalyser.disabled = false;
@@ -195,4 +354,7 @@ Office.onReady(() => {
   const btnAnomali = document.getElementById("btnAnomali") as HTMLButtonElement;
   btnAnomali.disabled = false;
   btnAnomali.addEventListener("click", kjørAnomalideteksjon);
+
+  const btnLLM = document.getElementById("btnLLM") as HTMLButtonElement;
+  btnLLM.addEventListener("click", kjørLLMAnalyse);
 });
