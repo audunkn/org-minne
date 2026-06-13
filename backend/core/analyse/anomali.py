@@ -122,13 +122,13 @@ def kjør_anomalideteksjon(rader: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if zscore_flagg[i]:
             best_col_idx = int(np.argmax(z_abs[i]))
             verdi = round(float(X[i, best_col_idx]), 3)
-            forklaring: str | None = f"univariat: {verdi}"
+            forklaring: str | None = f"univariat: {feature_kolonner[best_col_idx]}={verdi}"
         elif iqr_flagg[i]:
             outside = (X[i] < nedre) | (X[i] > øvre)
             z_abs_outside = np.where(outside, z_abs[i], -np.inf)
             best_col_idx = int(np.argmax(z_abs_outside))
             verdi = round(float(X[i, best_col_idx]), 3)
-            forklaring = f"univariat: {verdi}"
+            forklaring = f"univariat: {feature_kolonner[best_col_idx]}={verdi}"
         elif iso_flagg[i] or lof_flagg[i]:
             forklaring = "multivariat"
         else:

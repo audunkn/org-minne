@@ -7,13 +7,15 @@
 #### Fase 2 — `forklaring`-felt i anomaliresultat *(2026-06-13 HH:MM)*
 
 ##### feat
+- `frontend/src/taskpane.ts`: ny "Forklaring"-kolonne i Excel-utskriften ved siden av "Anomali" og "Flagg"
 - `backend/core/analyse/anomali.py`: nytt felt `forklaring` (str | None) i hvert avvik-entry
 - Prioritering Z-score → IQR → multivariat: univariathendelser peker på konkret tallverdi
 - Format `"univariat: {verdi}"` ved Z-score- eller IQR-flagg, `"multivariat"` ved kun IF/LOF, `None` uten flagg
+- Format utvidet til `"univariat: {kolonnenavn}={verdi}"` — brukeren ser nå hvilken variabel som utløste flagget *(2026-06-13 16:00)*
 
 ##### test
 - `test_avvik_struktur`: verifiserer at `forklaring`-nøkkel finnes og er `str | None`
-- `test_forklaring_outlier_er_univariat`: ekstremverdien gir `forklaring` som starter med `"univariat: "`
+- `test_forklaring_outlier_er_univariat`: ekstremverdien gir `forklaring` som starter med `"univariat: "` og inneholder kolonnenavnet (`"Kostnad"`)
 - `test_forklaring_ren_data_er_none_eller_multivariat`: rene rader uten Z-score/IQR-flagg har `forklaring=None`
 
 #### Fase 3, del 1 — RAG-indeksering av transkripsjoner *(2026-06-13 15:00)*
