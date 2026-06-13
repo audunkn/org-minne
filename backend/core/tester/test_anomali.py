@@ -131,14 +131,16 @@ def test_avvik_struktur():
 # ---------------------------------------------------------------------------
 
 def test_forklaring_outlier_er_univariat():
-    """Ekstremverdien (Kostnad=999999) skal gi forklaring som starter med 'univariat: '."""
+    """Ekstremverdien (Kostnad=999999) skal gi forklaring med kolonnenavn og verdi."""
     rader = _bygg_rader(9)
-    rader.append({"Avdeling": "Outlier", "Kostnad": 999999.0, "Volum": 999999.0})
+    # Bare Kostnad er ekstrem — Volum holdes normalt slik at kolonnevalget er deterministisk
+    rader.append({"Avdeling": "Outlier", "Kostnad": 999999.0, "Volum": 50.5})
     avvik = kjør_anomalideteksjon(rader)
     outlier = avvik[-1]
     assert outlier["er_anomali"] is True
     assert isinstance(outlier["forklaring"], str)
     assert outlier["forklaring"].startswith("univariat: ")
+    assert "Kostnad" in outlier["forklaring"]
 
 
 # ---------------------------------------------------------------------------
