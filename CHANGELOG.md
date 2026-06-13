@@ -4,6 +4,22 @@
 
 ### Planlagte implementeringer
 
+#### RAG-kvalitet — bedriftsidentifikasjon og score-terskel *(2026-06-13 HH:MM)*
+
+##### feat
+- `backend/core/rag/indekser.py`: `ekstraher_bedriftsnavn()` — kaller LLM på de første 2000 tegnene for å identifisere selskapet; returnerer "UKJENT" ved feil
+- `backend/core/rag/indekser.py`: `indekser_fil()` — prefiks `[Bedrift] ` foran hver chunk, `bedrift`-nøkkel i metadata, filnavnbytte til `Bedrift_originalfilnavn.txt`
+- `backend/core/rag/gjenfinning.py`: `søk_chromadb()` — filtrerer chunks med L2-distanse >= `score_terskel` (leses fra `rag_konfig.yaml`)
+- `rag_konfig.yaml`: ny seksjon `søk.score_terskel: 1.0`
+
+##### test
+- `test_ekstraher_bedriftsnavn_returnerer_navn`: LLM svarer "EDP" → returnerer "EDP"
+- `test_ekstraher_bedriftsnavn_feil_gir_ukjent`: LLM kaster → returnerer "UKJENT"
+- `test_ekstraher_bedriftsnavn_renser_svar`: whitespace/linjeskift fjernes
+- `test_chunk_prefiks_inneholder_bedrift`: chunk-tekst starter med `[EDP] `
+- `test_metadata_inneholder_bedrift`: metadata har `bedrift`-nøkkel med korrekt verdi
+- `test_søk_filtrerer_på_score_terskel`: kun chunks med distanse < terskel returneres
+
 #### Fase 3, del 2 — LLM-analyse av anomalier med RAG-kontekst *(2026-06-13 17:00)*
 
 ##### feat

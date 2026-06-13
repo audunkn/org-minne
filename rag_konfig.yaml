@@ -15,3 +15,6 @@ embedding:
 vektor_db:
   sti: vector_db
   samling: transkripsjoner
+
+søk:
+  score_terskel: 1.0   # L2-distanse; lavere = strengere (0=identisk, 2=ortogonal)

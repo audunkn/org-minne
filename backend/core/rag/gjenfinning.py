@@ -27,7 +27,8 @@ def søk_chromadb(query: str, n_resultater: int = 5) -> list[str]:
     """
     Søker ChromaDB og returnerer de N mest relevante dokumentchunkene som strenger.
 
-    Returnerer tom liste hvis samlingen er tom eller ikke finnes.
+    Filtrerer bort chunks med L2-distanse >= score_terskel fra rag_konfig.yaml.
+    Returnerer tom liste hvis samlingen er tom eller ingen chunks passerer terskelen.
     """
     konfig, rot = _last_konfig()
 
@@ -35,6 +36,7 @@ def søk_chromadb(query: str, n_resultater: int = 5) -> list[str]:
     samling_navn = konfig["vektor_db"]["samling"]
     modell_navn = konfig["embedding"]["modell"]
     enhet = konfig["embedding"]["enhet"]
+    score_terskel = konfig.get("søk", {}).get("score_terskel", 1.0)
 
     klient = chromadb.PersistentClient(path=str(db_sti))
     samling = klient.get_or_create_collection(name=samling_navn)
@@ -45,4 +47,13 @@ def søk_chromadb(query: str, n_resultater: int = 5) -> list[str]:
 
     resultat = samling.query(query_embeddings=embedding, n_results=n_resultater)
     dokumenter = resultat.get("documents", [[]])[0]
-    return dokumenter if dokumenter else []
+    distanser = resultat.get("distances", [[]])[0]
+
+    if not dokumenter:
+        return []
+
+    return [
+        dok
+        for dok, dist in zip(dokumenter, distanser)
+        if dist < score_terskel
+    ]

@@ -55,6 +55,28 @@ class TestSøkChromadb:
 
         assert resultat == dokumenter
 
+    def test_søk_filtrerer_på_score_terskel(self):
+        """Dokumenter med distance >= score_terskel filtreres bort."""
+        dokumenter = ["Relevant chunk", "Irrelevant chunk"]
+        mock_samling = MagicMock()
+        mock_samling.query.return_value = {
+            "documents": [dokumenter],
+            "ids": [["id_0", "id_1"]],
+            "distances": [[0.5, 1.5]],  # 0.5 < 1.0 (terskel), 1.5 >= 1.0
+        }
+        mock_klient = _lag_mock_klient(mock_samling)
+        mock_modell = MagicMock()
+        mock_modell.encode.return_value = [[0.1, 0.2, 0.3]]
+
+        with (
+            patch("rag.gjenfinning.chromadb.PersistentClient", return_value=mock_klient),
+            patch("rag.gjenfinning.SentenceTransformer", return_value=mock_modell),
+        ):
+            from rag.gjenfinning import søk_chromadb
+            resultat = søk_chromadb("EDP kostnader", n_resultater=2)
+
+        assert resultat == ["Relevant chunk"]
+
     def test_søk_tom_samling_returnerer_tom_liste(self):
         """søk_chromadb returnerer tom liste når samlingen er tom."""
         mock_samling = MagicMock()
