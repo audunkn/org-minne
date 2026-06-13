@@ -57,16 +57,18 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
     leverandør = os.getenv("LLM_LEVERANDØR", "openai").lower()
 
     if leverandør == "openai":
+        modell = os.getenv("LLM_MODELL", "gpt-4o-mini")
         svar = klient.chat.completions.create(
-            model="gpt-4o-mini",
+            model=modell,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
         )
         return svar.choices[0].message.content.strip()
 
     if leverandør == "mistral":
+        modell = os.getenv("LLM_MODELL", "mistral-small-latest")
         svar = klient.chat.complete(
-            model="mistral-small-latest",
+            model=modell,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
         )
