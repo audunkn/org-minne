@@ -23,7 +23,10 @@ Utdrag fra resultatpresentasjonen:
 {nummererte_chunks}
 
 Instruksjoner:
-1. Analyse (2–4 setninger): Forklar anomalien med fakta som er eksplisitt oppgitt i utdragene. Oppgi konkrete tall og begreper direkte fra teksten. Ikke spekuler om forhold som ikke fremgår av utdragene.
+1. Analyse (2–4 setninger): Forklar anomalien med fakta som er eksplisitt oppgitt i utdragene.
+   - Gjengi tall nøyaktig slik de fremgår av teksten — ikke avrund eller reformulér.
+   - Hvis anomalien er en stor prosentvis endring: forklar BEGGE sider av sammenligningen. Se etter hva som drev inneværende periode, og om sammenligningsperioden var preget av noe uvanlig (ekstremt lav base, engangsbelastninger, restruktureringskostnader, pandemipåvirkning e.l.).
+   - Ikke spekuler om forhold som ikke fremgår av utdragene.
 2. Sitater: Kopier 1–3 setninger ordrett fra utdragene som belyser anomalien best. Gjør ingen endringer i ordlyden. Utelat Sitater-seksjonen hvis ingen setning i utdragene er direkte relevant.
 
 Svar i dette formatet:
