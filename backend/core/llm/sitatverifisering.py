@@ -35,11 +35,14 @@ def verifiser_sitat(sitat: str, transkripsjon: str) -> bool:
 
     Prosedyre:
     1. Fjern eventuell [Bedrift]-prefiks.
-    2. Normaliser whitespace i både sitat og transkripsjon.
-    3. Krev minimum 10 tegn etter normalisering.
-    4. Sjekk substring-match (case-sensitiv).
+    2. Strip markdown-formatering (* / _) og anførselstegn fra start/slutt.
+    3. Normaliser whitespace i både sitat og transkripsjon.
+    4. Krev minimum 10 tegn etter normalisering.
+    5. Sjekk substring-match (case-sensitiv).
     """
     renset = re.sub(r'^\[[^\]]+\]\s*', '', sitat)
+    # Strip markdown (*/_) og anførselstegn (rett, typografisk, vinklet) fra begge ender
+    renset = re.sub(r'^[\*_\"\u201c\u201d\u00ab\u00bb]+|[\*_\"\u201c\u201d\u00ab\u00bb]+$', '', renset).strip()
     normalisert_sitat = ' '.join(renset.split())
     if len(normalisert_sitat) < 10:
         return False
@@ -66,6 +69,7 @@ def filtrer_sitater(tekst: str, transkripsjon: str) -> str:
     verifiserte = []
     for s in sitater:
         renset = re.sub(r'^\[[^\]]+\]\s*', '', s)
+        renset = re.sub(r'^[\*_\"\u201c\u201d\u00ab\u00bb]+|[\*_\"\u201c\u201d\u00ab\u00bb]+$', '', renset).strip()
         norm = ' '.join(renset.split())
         treff = len(norm) >= 10 and norm in norm_transkripsjon
         log.info("[sitatverifisering] sitat=%r treff=%s", norm[:80], treff)

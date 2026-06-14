@@ -107,6 +107,20 @@ class TestVerifiserSitat:
         sitat = "123456789"
         assert verifiser_sitat(sitat, transkripsjon) is False
 
+    def test_markdown_wrapper_strippes(self):
+        """LLM wrapper *\"tekst\"* — asterisk og anførselstegn strippes før match."""
+        from llm.sitatverifisering import verifiser_sitat
+        transkripsjon = "Nettoresultatet for konsernet var opp til 4 723 millioner kroner."
+        sitat = '*"Nettoresultatet for konsernet var opp til 4 723 millioner kroner."*'
+        assert verifiser_sitat(sitat, transkripsjon) is True
+
+    def test_typografiske_anforselstegn_strippes(self):
+        """Typografiske \u201c\u201d-anf\xf8rselstegn strippes f\xf8r match."""
+        from llm.sitatverifisering import verifiser_sitat
+        transkripsjon = "Inntektene \xf8kte med 42 prosent p\xe5 \xe5rsbasis dette kvartalet."
+        sitat = "\u201cInntektene \xf8kte med 42 prosent p\xe5 \xe5rsbasis dette kvartalet.\u201d"
+        assert verifiser_sitat(sitat, transkripsjon) is True
+
 
 # ---------------------------------------------------------------------------
 # filtrer_sitater
