@@ -18,7 +18,7 @@ def lag_llm_klient():
         return openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     if leverandør == "mistral":
-        from mistralai import Mistral
+        from mistralai.client import Mistral
         return Mistral(api_key=os.getenv("MISTRAL_API_KEY"))
 
     raise ValueError(f"Ukjent LLM_LEVERANDØR: '{leverandør}'. Støttede verdier: 'openai', 'mistral'.")
