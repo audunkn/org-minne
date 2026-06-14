@@ -58,7 +58,7 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
         • sitat 1
     """
     query = _bygg_rag_query(bedrift, anomali_forklaring)
-    chunks = søk_chromadb(query, n_resultater=5)
+    chunks = søk_chromadb(query, n_resultater=5, bedrift=bedrift)
 
     if chunks:
         nummererte = "\n".join(f"{i + 1}. {chunk}" for i, chunk in enumerate(chunks))

@@ -77,6 +77,40 @@ class TestSøkChromadb:
 
         assert resultat == ["Relevant chunk"]
 
+    def test_søk_med_bedrift_sender_where_filter(self):
+        """søk_chromadb sender where={'bedrift': bedrift} til ChromaDB når bedrift er oppgitt."""
+        mock_samling = _lag_mock_samling(["[KGHM] Inntektene økte markant i Q2."])
+        mock_klient = _lag_mock_klient(mock_samling)
+        mock_modell = MagicMock()
+        mock_modell.encode.return_value = [[0.1, 0.2, 0.3]]
+
+        with (
+            patch("rag.gjenfinning.chromadb.PersistentClient", return_value=mock_klient),
+            patch("rag.gjenfinning.SentenceTransformer", return_value=mock_modell),
+        ):
+            from rag.gjenfinning import søk_chromadb
+            søk_chromadb("KGHM finansielle resultater", n_resultater=3, bedrift="KGHM")
+
+        kall = mock_samling.query.call_args
+        assert kall.kwargs.get("where") == {"bedrift": "KGHM"}
+
+    def test_søk_uten_bedrift_sender_ikke_where_filter(self):
+        """søk_chromadb sender ikke where-filter når bedrift er None."""
+        mock_samling = _lag_mock_samling(["Generisk chunk."])
+        mock_klient = _lag_mock_klient(mock_samling)
+        mock_modell = MagicMock()
+        mock_modell.encode.return_value = [[0.1, 0.2, 0.3]]
+
+        with (
+            patch("rag.gjenfinning.chromadb.PersistentClient", return_value=mock_klient),
+            patch("rag.gjenfinning.SentenceTransformer", return_value=mock_modell),
+        ):
+            from rag.gjenfinning import søk_chromadb
+            søk_chromadb("generisk query", n_resultater=3)
+
+        kall = mock_samling.query.call_args
+        assert "where" not in kall.kwargs
+
     def test_søk_tom_samling_returnerer_tom_liste(self):
         """søk_chromadb returnerer tom liste når samlingen er tom."""
         mock_samling = MagicMock()

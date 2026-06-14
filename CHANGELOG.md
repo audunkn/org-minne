@@ -9,7 +9,9 @@
 ##### fix
 - `rag_konfig.yaml`: hevet `score_terskel` fra 1.0 til 12.0 — for `paraphrase-multilingual-MiniLM-L12-v2` er relevante L2-distanser i range 9–11, terskel 1.0 filtrerte 100 % av resultater bort
 - `backend/core/llm/forklaring.py`: `_bygg_rag_query()` — ny hjelpefunksjon som bygger semantisk query med `[Bedrift]`-prefiks og naturlig språk istedenfor teknisk `univariat: Kolonne=verdi`-streng; `"univariat: Omsetning=1890.0"` → `"[EDP] finansielle resultater Omsetning"`
-- `backend/core/tester/test_gjenfinning.py`: oppdaterte mock-distanser [0.5, 1.5] → [9.0, 13.0] for å matche ny terskel
+- `backend/core/rag/gjenfinning.py`: ny `bedrift`-parameter i `søk_chromadb()` — sender `where={"bedrift": bedrift}` til ChromaDB slik at søket begrenses til riktig selskaps chunks; uten filter returnerte andre selskapers generiske finanstekster
+- `backend/core/llm/forklaring.py`: `generer_forklaring()` sender nå `bedrift` videre til `søk_chromadb()`
+- `backend/core/tester/test_gjenfinning.py`: oppdaterte mock-distanser [0.5, 1.5] → [9.0, 13.0]; la til tester for `where`-filter med og uten bedrift-parameter
 
 ### Planlagte implementeringer
 

@@ -23,11 +23,16 @@ def _last_konfig() -> dict:
         mappe = forelder
 
 
-def søk_chromadb(query: str, n_resultater: int = 5) -> list[str]:
+def søk_chromadb(
+    query: str,
+    n_resultater: int = 5,
+    bedrift: str | None = None,
+) -> list[str]:
     """
     Søker ChromaDB og returnerer de N mest relevante dokumentchunkene som strenger.
 
     Filtrerer bort chunks med L2-distanse >= score_terskel fra rag_konfig.yaml.
+    Hvis bedrift er oppgitt, begrenses søket til chunks med matchende bedrift-metadata.
     Returnerer tom liste hvis samlingen er tom eller ingen chunks passerer terskelen.
     """
     konfig, rot = _last_konfig()
@@ -45,7 +50,11 @@ def søk_chromadb(query: str, n_resultater: int = 5) -> list[str]:
     enc = modell.encode([query])
     embedding = enc.tolist() if hasattr(enc, "tolist") else enc
 
-    resultat = samling.query(query_embeddings=embedding, n_results=n_resultater)
+    søk_kwargs: dict = {"query_embeddings": embedding, "n_results": n_resultater}
+    if bedrift:
+        søk_kwargs["where"] = {"bedrift": bedrift}
+
+    resultat = samling.query(**søk_kwargs)
     dokumenter = resultat.get("documents", [[]])[0]
     distanser = resultat.get("distances", [[]])[0]
 
