@@ -2,6 +2,18 @@
 
 ## [Uutgitt]
 
+### Planlagte implementeringer
+
+#### feat(llm): sitatverifisering mot transkripsjon *(2026-06-14 00:00)*
+
+##### feat
+- `backend/core/llm/sitatverifisering.py`: ny fil med `parse_sitater()`, `verifiser_sitat()` og `filtrer_sitater()` — parser bullet-sitater fra LLM-svar, verifiserer hvert sitat med whitespace-normalisert substring-match mot transkripsjonsfilen, filtrerer bort hallusinerte sitater
+- `backend/core/rag/gjenfinning.py`: ny funksjon `hent_transkripsjon(bedrift)` — løser opp bedriftsnavn via fuzzy match, henter `kilde_fil` fra ChromaDB-metadata og returnerer filinnholdet fra `transcripts/`
+- `backend/core/llm/forklaring.py`: kaller `hent_transkripsjon()` og `filtrer_sitater()` etter LLM-svar for begge leverandører (openai og mistral); verifisering hopper over hvis transkripsjon ikke finnes
+
+##### test
+- `backend/core/tester/test_sitatverifisering.py`: 17 enhetstester for `parse_sitater` (0/1/3 sitater, tom seksjon, whitespace), `verifiser_sitat` (identisk match, normalisert whitespace, hallusinert, for kort, prefiks-stripping) og `filtrer_sitater` (blanding, alle hallusinerte, analysen bevares, ingen Sitater-seksjon)
+
 ### Ad hoc-endringer
 
 #### fix(rag): score-terskel og query-konstruksjon *(2026-06-14 HH:MM)*
