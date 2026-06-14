@@ -8,24 +8,49 @@ from rag.gjenfinning import søk_chromadb
 from llm.klient import lag_llm_klient
 
 
+_INGEN_KONTEKST_SVAR = (
+    "Analyse: Ingen transkripsjon tilgjengelig for «{bedrift}». "
+    "Anomalien kan ikke forklares uten kildegrunnlag.\n\nSitater:"
+)
+
 _PROMPT_MAL = """\
-Du er finansanalytiker. Bedriften «{bedrift}» viser følgende anomali: {anomali_forklaring}.
+Du er finansanalytiker. Analyser anomalien nedenfor utelukkende basert på de nummererte utdragene fra selskapets resultatpresentasjon.
 
-{rag_seksjon}\
-Forklar anomalien på norsk basert på utdragene. Velg 1-3 illustrerende sitater.
-Svar i dette formatet:
-Analyse: [forklaringstekst]
+Bedrift: {bedrift}
+Anomali: {anomali_forklaring}
 
-Sitater:
-• [sitat 1]
-• [sitat 2]\
-"""
-
-_RAG_SEKSJON_MAL = """\
-Relevante utdrag fra resultatpresentasjoner:
+Utdrag fra resultatpresentasjonen:
 {nummererte_chunks}
 
+Instruksjoner:
+1. Analyse (2–4 setninger): Forklar anomalien med fakta som er eksplisitt oppgitt i utdragene. Oppgi konkrete tall og begreper direkte fra teksten. Ikke spekuler om forhold som ikke fremgår av utdragene.
+2. Sitater: Kopier 1–3 setninger ordrett fra utdragene som belyser anomalien best. Gjør ingen endringer i ordlyden. Utelat Sitater-seksjonen hvis ingen setning i utdragene er direkte relevant.
+
+Svar i dette formatet:
+Analyse: [tekst]
+
+Sitater:
+• [ordrett kopi fra utdrag]\
 """
+
+
+def _bygg_rag_query(bedrift: str, anomali_forklaring: str) -> str:
+    """
+    Lager en semantisk query som matcher transkripsjonstekst.
+
+    Chunks er indeksert med «[Bedrift]»-prefiks, så queryen bruker samme format.
+    «univariat: Omsetning=1890.0» → «[EDP] finansielle resultater Omsetning»
+    «multivariat»                  → «[EDP] finansielle resultater»
+    """
+    kolonne = ""
+    if "univariat:" in anomali_forklaring:
+        del_etter = anomali_forklaring.split(":", 1)[1].strip()
+        kolonne = del_etter.split("=")[0].strip()
+
+    deler = [f"[{bedrift}]", "finansielle resultater"]
+    if kolonne:
+        deler.append(kolonne)
+    return " ".join(deler)
 
 
 def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
@@ -38,18 +63,17 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
         Sitater:
         • sitat 1
     """
-    chunks = søk_chromadb(f"{bedrift} {anomali_forklaring}", n_resultater=5)
+    query = _bygg_rag_query(bedrift, anomali_forklaring)
+    chunks = søk_chromadb(query, n_resultater=5, bedrift=bedrift)
 
-    if chunks:
-        nummererte = "\n".join(f"{i + 1}. {chunk}" for i, chunk in enumerate(chunks))
-        rag_seksjon = _RAG_SEKSJON_MAL.format(nummererte_chunks=nummererte)
-    else:
-        rag_seksjon = ""
+    if not chunks:
+        return _INGEN_KONTEKST_SVAR.format(bedrift=bedrift)
 
+    nummererte = "\n".join(f"{i + 1}. {chunk}" for i, chunk in enumerate(chunks))
     prompt = _PROMPT_MAL.format(
         bedrift=bedrift,
         anomali_forklaring=anomali_forklaring,
-        rag_seksjon=rag_seksjon,
+        nummererte_chunks=nummererte,
     )
 
     klient = lag_llm_klient()
@@ -64,7 +88,7 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
             svar = klient.chat.completions.create(
                 model=modell,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
+                temperature=0.0,
             )
             return svar.choices[0].message.content.strip()
 
@@ -73,7 +97,7 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
             svar = klient.chat.complete(
                 model=modell,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
+                temperature=0.0,
             )
             return svar.choices[0].message.content.strip()
 

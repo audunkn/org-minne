@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv()
 
 if TYPE_CHECKING:
     import chromadb
@@ -189,6 +192,58 @@ def _chunk_rekursivt(
 
 
 # ---------------------------------------------------------------------------
+# Bedriftsekstraksjon
+# ---------------------------------------------------------------------------
+
+def ekstraher_bedriftsnavn(tekst: str) -> str:
+    """
+    Sender de første 2000 tegnene til LLM og returnerer bedriftsnavnet.
+
+    Returnerer 'UKJENT' ved feil eller uleselig svar.
+    """
+    import os
+    from llm.klient import lag_llm_klient
+
+    utdrag = tekst[:2000]
+    prompt = (
+        "Dette er starten av en bedriftspresentasjon. "
+        "Hvilket selskap presenterer resultatene? "
+        "Svar kun med selskapsnavnet, ingenting annet. "
+        "Hvis du ikke kan avgjøre det, svar 'UKJENT'."
+        f"\n\n{utdrag}"
+    )
+
+    try:
+        klient = lag_llm_klient()
+        leverandør = os.getenv("LLM_LEVERANDØR", "openai").lower()
+        modell = os.getenv("LLM_MODELL", "gpt-4o-mini")
+
+        if leverandør == "openai":
+            svar = klient.chat.completions.create(
+                model=modell,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0,
+            )
+            navn = svar.choices[0].message.content
+        elif leverandør == "mistral":
+            svar = klient.chat.complete(
+                model=modell,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0,
+            )
+            navn = svar.choices[0].message.content
+        else:
+            return "UKJENT"
+
+        navn = navn.strip().replace("\n", " ")[:60]
+        return navn if navn else "UKJENT"
+
+    except Exception as e:
+        log.warning("  ekstraher_bedriftsnavn feilet: %s", e)
+        return "UKJENT"
+
+
+# ---------------------------------------------------------------------------
 # Indeksering av én fil
 # ---------------------------------------------------------------------------
 
@@ -203,16 +258,39 @@ def indekser_fil(
     """
     Indekserer én fil i ChromaDB-samlingen.
 
-    Returnerer antall nye chunks lagt til (0 hvis filen allerede er indeksert).
+    Ekstraher bedriftsnavn via LLM, prefiks hver chunk med '[Bedrift] ',
+    og legg 'bedrift' i metadata. Returnerer antall nye chunks lagt til
+    (0 hvis filen allerede er indeksert).
     """
     filnavn = fil_sti.name
 
+    # Idempotens-sjekk på original filnavn før eventuelt navnebytte
     eksisterende = samling.get(where={"kilde_fil": filnavn}, limit=1)
     if eksisterende["ids"] and eksisterende["ids"][0]:
         log.info("  allerede indeksert: %s", filnavn)
         return 0
 
     tekst = fil_sti.read_text(encoding=encoding)
+
+    bedrift = ekstraher_bedriftsnavn(tekst)
+    log.info("  ekstrahert bedrift: %s", bedrift)
+
+    # Filnavnbytte hvis bedrift er kjent
+    if bedrift != "UKJENT":
+        bedrift_prefiks = bedrift.replace(" ", "-")
+        nytt_navn = f"{bedrift_prefiks}_{filnavn}"
+        ny_sti = fil_sti.parent / nytt_navn
+        fil_sti.rename(ny_sti)
+        fil_sti = ny_sti
+        filnavn = nytt_navn
+        log.info("  omdøpt til: %s", filnavn)
+
+        # Sjekk idempotens på nytt filnavn (hvis filen allerede er omdøpt og indeksert)
+        eksisterende2 = samling.get(where={"kilde_fil": filnavn}, limit=1)
+        if eksisterende2["ids"] and eksisterende2["ids"][0]:
+            log.info("  allerede indeksert (nytt navn): %s", filnavn)
+            return 0
+
     chunk_liste = chunk_tekst(tekst, chunk_størrelse=chunk_størrelse, overlapp=overlapp)
 
     if not chunk_liste:
@@ -220,12 +298,14 @@ def indekser_fil(
         return 0
 
     total = len(chunk_liste)
-    chunks_tekst = [c[0] for c in chunk_liste]
+    prefiks = f"[{bedrift}] "
+    chunks_tekst = [prefiks + c[0] for c in chunk_liste]
     embeddings = modell.encode(chunks_tekst, show_progress_bar=False)
 
     metadatas = [
         {
             "kilde_fil": filnavn,
+            "bedrift": bedrift,
             "chunk_nr": i,
             "total_chunks": total,
             "tegnstart": chunk_liste[i][1],

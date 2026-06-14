@@ -2,7 +2,43 @@
 
 ## [Uutgitt]
 
+### Ad hoc-endringer
+
+#### fix(rag): score-terskel og query-konstruksjon *(2026-06-14 HH:MM)*
+
+##### fix
+- `rag_konfig.yaml`: hevet `score_terskel` fra 1.0 til 12.0 — for `paraphrase-multilingual-MiniLM-L12-v2` er relevante L2-distanser i range 9–11, terskel 1.0 filtrerte 100 % av resultater bort
+- `backend/core/llm/forklaring.py`: `_bygg_rag_query()` — ny hjelpefunksjon som bygger semantisk query med `[Bedrift]`-prefiks og naturlig språk istedenfor teknisk `univariat: Kolonne=verdi`-streng; `"univariat: Omsetning=1890.0"` → `"[EDP] finansielle resultater Omsetning"`
+- `backend/core/rag/gjenfinning.py`: ny `bedrift`-parameter i `søk_chromadb()` — sender `where={"bedrift": bedrift}` til ChromaDB slik at søket begrenses til riktig selskaps chunks; uten filter returnerte andre selskapers generiske finanstekster
+- `backend/core/llm/forklaring.py`: `generer_forklaring()` sender nå `bedrift` videre til `søk_chromadb()`
+- `backend/core/llm/forklaring.py`: ny prompt — krever eksplisitt kildegrunnlag, forbyr spekulasjon, pålegger ordrett gjengivelse av sitater; `_INGEN_KONTEKST_SVAR` returneres direkte uten LLM-kall når chunks er tom; temperature senket fra 0.2 til 0.0
+- `backend/core/tester/test_gjenfinning.py`: oppdaterte mock-distanser [0.5, 1.5] → [9.0, 13.0]; la til tester for `where`-filter med og uten bedrift-parameter
+
 ### Planlagte implementeringer
+
+#### RAG-kvalitet — re-indeksering med bedriftsnavn og dotenv-fix *(2026-06-13 19:02)*
+
+##### fix
+- `backend/core/rag/indekser.py`: la til `load_dotenv()` slik at `.env`-filen leses ved kjøring av scriptet direkte
+
+##### chore
+- Slettet gammel `vector_db/` og re-indekserte 25 transkripsjoner — alle omdøpt med bedriftsprefiks, 1625 chunks indeksert
+
+#### RAG-kvalitet — bedriftsidentifikasjon og score-terskel *(2026-06-13 HH:MM)*
+
+##### feat
+- `backend/core/rag/indekser.py`: `ekstraher_bedriftsnavn()` — kaller LLM på de første 2000 tegnene for å identifisere selskapet; returnerer "UKJENT" ved feil
+- `backend/core/rag/indekser.py`: `indekser_fil()` — prefiks `[Bedrift] ` foran hver chunk, `bedrift`-nøkkel i metadata, filnavnbytte til `Bedrift_originalfilnavn.txt`
+- `backend/core/rag/gjenfinning.py`: `søk_chromadb()` — filtrerer chunks med L2-distanse >= `score_terskel` (leses fra `rag_konfig.yaml`)
+- `rag_konfig.yaml`: ny seksjon `søk.score_terskel: 1.0`
+
+##### test
+- `test_ekstraher_bedriftsnavn_returnerer_navn`: LLM svarer "EDP" → returnerer "EDP"
+- `test_ekstraher_bedriftsnavn_feil_gir_ukjent`: LLM kaster → returnerer "UKJENT"
+- `test_ekstraher_bedriftsnavn_renser_svar`: whitespace/linjeskift fjernes
+- `test_chunk_prefiks_inneholder_bedrift`: chunk-tekst starter med `[EDP] `
+- `test_metadata_inneholder_bedrift`: metadata har `bedrift`-nøkkel med korrekt verdi
+- `test_søk_filtrerer_på_score_terskel`: kun chunks med distanse < terskel returneres
 
 #### Fase 3, del 2 — LLM-analyse av anomalier med RAG-kontekst *(2026-06-13 17:00)*
 
