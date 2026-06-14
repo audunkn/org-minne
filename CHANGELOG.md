@@ -11,6 +11,7 @@
 - `backend/core/llm/forklaring.py`: `_bygg_rag_query()` — ny hjelpefunksjon som bygger semantisk query med `[Bedrift]`-prefiks og naturlig språk istedenfor teknisk `univariat: Kolonne=verdi`-streng; `"univariat: Omsetning=1890.0"` → `"[EDP] finansielle resultater Omsetning"`
 - `backend/core/rag/gjenfinning.py`: ny `bedrift`-parameter i `søk_chromadb()` — sender `where={"bedrift": bedrift}` til ChromaDB slik at søket begrenses til riktig selskaps chunks; uten filter returnerte andre selskapers generiske finanstekster
 - `backend/core/llm/forklaring.py`: `generer_forklaring()` sender nå `bedrift` videre til `søk_chromadb()`
+- `backend/core/llm/forklaring.py`: ny prompt — krever eksplisitt kildegrunnlag, forbyr spekulasjon, pålegger ordrett gjengivelse av sitater; `_INGEN_KONTEKST_SVAR` returneres direkte uten LLM-kall når chunks er tom; temperature senket fra 0.2 til 0.0
 - `backend/core/tester/test_gjenfinning.py`: oppdaterte mock-distanser [0.5, 1.5] → [9.0, 13.0]; la til tester for `where`-filter med og uten bedrift-parameter
 
 ### Planlagte implementeringer
