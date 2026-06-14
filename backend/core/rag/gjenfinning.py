@@ -58,6 +58,43 @@ def _finn_matchende_bedrift(samling, bedrift: str) -> str | None:
     return None
 
 
+def hent_transkripsjon(bedrift: str) -> str | None:
+    """
+    Returnerer innholdet i transkripsjonsfilen for den gitte bedriften.
+
+    Kobler til ChromaDB, løser opp bedriftsnavnet via fuzzy match, henter
+    kilde_fil fra metadata og leser filen fra {prosjektrot}/transcripts/.
+    Returnerer None hvis bedriften ikke finnes i DB eller filen mangler.
+    """
+    konfig, rot = _last_konfig()
+
+    db_sti = rot / konfig["vektor_db"]["sti"]
+    samling_navn = konfig["vektor_db"]["samling"]
+    transkripsjon_mappe = rot / konfig["transkripsjoner"]["mappe"]
+    encoding = konfig["transkripsjoner"].get("encoding", "utf-8")
+
+    klient = chromadb.PersistentClient(path=str(db_sti))
+    samling = klient.get_or_create_collection(name=samling_navn)
+
+    matchende = _finn_matchende_bedrift(samling, bedrift)
+    if not matchende:
+        return None
+
+    res = samling.get(where={"bedrift": matchende}, limit=1, include=["metadatas"])
+    if not res["ids"] or not res["ids"][0]:
+        return None
+
+    kilde_fil = res["metadatas"][0].get("kilde_fil")
+    if not kilde_fil:
+        return None
+
+    fil_sti = transkripsjon_mappe / kilde_fil
+    if not fil_sti.exists():
+        return None
+
+    return fil_sti.read_text(encoding=encoding)
+
+
 def søk_chromadb(
     query: str,
     n_resultater: int = 5,

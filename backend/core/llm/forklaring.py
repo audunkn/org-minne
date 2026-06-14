@@ -4,8 +4,9 @@ Genererer LLM-forklaring på anomalier med RAG-kontekst.
 from __future__ import annotations
 
 from fastapi import HTTPException
-from rag.gjenfinning import søk_chromadb
+from rag.gjenfinning import søk_chromadb, hent_transkripsjon
 from llm.klient import lag_llm_klient
+from llm.sitatverifisering import filtrer_sitater
 
 
 _INGEN_KONTEKST_SVAR = (
@@ -93,7 +94,11 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
             )
-            return svar.choices[0].message.content.strip()
+            svar_tekst = svar.choices[0].message.content.strip()
+            transkripsjon = hent_transkripsjon(bedrift)
+            if transkripsjon:
+                svar_tekst = filtrer_sitater(svar_tekst, transkripsjon)
+            return svar_tekst
 
         if leverandør == "mistral":
             modell = os.getenv("LLM_MODELL", "mistral-small-latest")
@@ -102,7 +107,11 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
             )
-            return svar.choices[0].message.content.strip()
+            svar_tekst = svar.choices[0].message.content.strip()
+            transkripsjon = hent_transkripsjon(bedrift)
+            if transkripsjon:
+                svar_tekst = filtrer_sitater(svar_tekst, transkripsjon)
+            return svar_tekst
 
         raise ValueError(f"Ukjent LLM_LEVERANDØR ved generering: '{leverandør}'")
 
