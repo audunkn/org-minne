@@ -62,7 +62,7 @@ class TestSøkChromadb:
         mock_samling.query.return_value = {
             "documents": [dokumenter],
             "ids": [["id_0", "id_1"]],
-            "distances": [[0.5, 1.5]],  # 0.5 < 1.0 (terskel), 1.5 >= 1.0
+            "distances": [[9.0, 13.0]],  # 9.0 < 12.0 (terskel), 13.0 >= 12.0
         }
         mock_klient = _lag_mock_klient(mock_samling)
         mock_modell = MagicMock()

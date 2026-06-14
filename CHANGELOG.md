@@ -2,6 +2,15 @@
 
 ## [Uutgitt]
 
+### Ad hoc-endringer
+
+#### fix(rag): score-terskel og query-konstruksjon *(2026-06-14 HH:MM)*
+
+##### fix
+- `rag_konfig.yaml`: hevet `score_terskel` fra 1.0 til 12.0 — for `paraphrase-multilingual-MiniLM-L12-v2` er relevante L2-distanser i range 9–11, terskel 1.0 filtrerte 100 % av resultater bort
+- `backend/core/llm/forklaring.py`: `_bygg_rag_query()` — ny hjelpefunksjon som bygger semantisk query med `[Bedrift]`-prefiks og naturlig språk istedenfor teknisk `univariat: Kolonne=verdi`-streng; `"univariat: Omsetning=1890.0"` → `"[EDP] finansielle resultater Omsetning"`
+- `backend/core/tester/test_gjenfinning.py`: oppdaterte mock-distanser [0.5, 1.5] → [9.0, 13.0] for å matche ny terskel
+
 ### Planlagte implementeringer
 
 #### RAG-kvalitet — re-indeksering med bedriftsnavn og dotenv-fix *(2026-06-13 19:02)*

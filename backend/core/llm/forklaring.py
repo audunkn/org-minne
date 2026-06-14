@@ -28,6 +28,25 @@ Relevante utdrag fra resultatpresentasjoner:
 """
 
 
+def _bygg_rag_query(bedrift: str, anomali_forklaring: str) -> str:
+    """
+    Lager en semantisk query som matcher transkripsjonstekst.
+
+    Chunks er indeksert med «[Bedrift]»-prefiks, så queryen bruker samme format.
+    «univariat: Omsetning=1890.0» → «[EDP] finansielle resultater Omsetning»
+    «multivariat»                  → «[EDP] finansielle resultater»
+    """
+    kolonne = ""
+    if "univariat:" in anomali_forklaring:
+        del_etter = anomali_forklaring.split(":", 1)[1].strip()
+        kolonne = del_etter.split("=")[0].strip()
+
+    deler = [f"[{bedrift}]", "finansielle resultater"]
+    if kolonne:
+        deler.append(kolonne)
+    return " ".join(deler)
+
+
 def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
     """
     Henter RAG-kontekst og kaller LLM for å generere forklaring på anomalien.
@@ -38,7 +57,8 @@ def generer_forklaring(bedrift: str, anomali_forklaring: str) -> str:
         Sitater:
         • sitat 1
     """
-    chunks = søk_chromadb(f"{bedrift} {anomali_forklaring}", n_resultater=5)
+    query = _bygg_rag_query(bedrift, anomali_forklaring)
+    chunks = søk_chromadb(query, n_resultater=5)
 
     if chunks:
         nummererte = "\n".join(f"{i + 1}. {chunk}" for i, chunk in enumerate(chunks))

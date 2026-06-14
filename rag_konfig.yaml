@@ -17,4 +17,5 @@ vektor_db:
   samling: transkripsjoner
 
 søk:
-  score_terskel: 1.0   # L2-distanse; lavere = strengere (0=identisk, 2=ortogonal)
+  score_terskel: 12.0  # L2-distanse; lavere = strengere. Kalibrert mot paraphrase-multilingual-MiniLM-L12-v2:
+                        # 0=identisk, ~4=veldig lik, ~9=relevant match, ~14+=irrelevant
