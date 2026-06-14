@@ -23,6 +23,41 @@ def _last_konfig() -> dict:
         mappe = forelder
 
 
+def _finn_matchende_bedrift(samling, bedrift: str) -> str | None:
+    """
+    Finner det lagrede bedriftsnavnet som best matcher input.
+
+    Prøver i rekkefølge:
+    1. Eksakt match                  «KGHM»          → «KGHM»
+    2. Case-insensitiv eksakt        «kghm»           → «KGHM»
+    3. Input er del av lagret navn   «Prysmian»       → «Prysmian Group»
+    4. Lagret navn er del av input   «TeamViewer AG»  → «TeamViewer AG»
+
+    Returnerer None hvis ingen match finnes.
+    """
+    res = samling.get(include=["metadatas"])
+    alle_bedrifter = {m["bedrift"] for m in res["metadatas"] if "bedrift" in m}
+
+    if bedrift in alle_bedrifter:
+        return bedrift
+
+    b_lower = bedrift.lower()
+
+    for b in alle_bedrifter:
+        if b_lower == b.lower():
+            return b
+
+    for b in alle_bedrifter:
+        if b_lower in b.lower():
+            return b
+
+    for b in alle_bedrifter:
+        if b.lower() in b_lower:
+            return b
+
+    return None
+
+
 def søk_chromadb(
     query: str,
     n_resultater: int = 5,
@@ -33,6 +68,7 @@ def søk_chromadb(
 
     Filtrerer bort chunks med L2-distanse >= score_terskel fra rag_konfig.yaml.
     Hvis bedrift er oppgitt, begrenses søket til chunks med matchende bedrift-metadata.
+    Bruker fuzzy navnmatch slik at «Prysmian» treffer «Prysmian Group» i databasen.
     Returnerer tom liste hvis samlingen er tom eller ingen chunks passerer terskelen.
     """
     konfig, rot = _last_konfig()
@@ -52,7 +88,9 @@ def søk_chromadb(
 
     søk_kwargs: dict = {"query_embeddings": embedding, "n_results": n_resultater}
     if bedrift:
-        søk_kwargs["where"] = {"bedrift": bedrift}
+        matchende = _finn_matchende_bedrift(samling, bedrift)
+        if matchende:
+            søk_kwargs["where"] = {"bedrift": matchende}
 
     resultat = samling.query(**søk_kwargs)
     dokumenter = resultat.get("documents", [[]])[0]
