@@ -3,7 +3,10 @@ Sitatverifisering: parser, verifiserer og filtrerer LLM-sitater mot transkripsjo
 """
 from __future__ import annotations
 
+import logging
 import re
+
+log = logging.getLogger(__name__)
 
 
 def parse_sitater(tekst: str) -> list[str]:
@@ -56,7 +59,18 @@ def filtrer_sitater(tekst: str, transkripsjon: str) -> str:
 
     analyse_del = tekst.split("Sitater:", 1)[0].rstrip()
     sitater = parse_sitater(tekst)
-    verifiserte = [s for s in sitater if verifiser_sitat(s, transkripsjon)]
+
+    norm_transkripsjon = ' '.join(transkripsjon.split())
+    log.info("[sitatverifisering] transkripsjon lengde=%d tegn", len(norm_transkripsjon))
+
+    verifiserte = []
+    for s in sitater:
+        renset = re.sub(r'^\[[^\]]+\]\s*', '', s)
+        norm = ' '.join(renset.split())
+        treff = len(norm) >= 10 and norm in norm_transkripsjon
+        log.info("[sitatverifisering] sitat=%r treff=%s", norm[:80], treff)
+        if treff:
+            verifiserte.append(s)
 
     deler = [analyse_del, "", "Sitater:"]
     for s in verifiserte:
